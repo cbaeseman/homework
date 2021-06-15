@@ -27,7 +27,7 @@ terraforms init
 Continue by running a plan\
 terraforms plan
 
-Finally you can deploy by running apply
+Finally you can deploy by running apply\
 terraforms apply
 
 
