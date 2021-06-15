@@ -2,15 +2,16 @@ provider "aws" {
   region = "us-east-1"
 }
 
+
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-
+#S3 Bucket
 resource "aws_s3_bucket" "homeworkhellobucket" {
   bucket = "homeworkhellobucket"
 }
 
-
+#Lambda Role
 resource "aws_iam_role" "iam_for_lambda" {
   name = "iam_for_lambda"
 
@@ -32,7 +33,7 @@ resource "aws_iam_role" "iam_for_lambda" {
 EOF
 }
 
-
+#Lambda Function
 variable "homework_lambda_function_name" {
   default = "homework_lambda_function_name"
 }
@@ -61,10 +62,11 @@ resource "aws_lambda_function" "homework_lambda" {
   ]
 }
 
-
+#Gateway
 resource "aws_api_gateway_rest_api" "api" {
   name = "myapi"
 }
+
 
 resource "aws_api_gateway_resource" "resource" {
   path_part   = "resource"
@@ -80,6 +82,7 @@ resource "aws_api_gateway_method" "method" {
   authorization = "NONE"
 }
 
+
 resource "aws_api_gateway_integration" "integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.resource.id
@@ -89,10 +92,12 @@ resource "aws_api_gateway_integration" "integration" {
   uri                     = aws_lambda_function.homework_lambda.invoke_arn
 }
 
+
 resource "aws_api_gateway_deployment" "homework" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   depends_on = [aws_api_gateway_integration.integration]
 }
+
 
 resource "aws_api_gateway_stage" "homework" {
   deployment_id = aws_api_gateway_deployment.homework.id
@@ -101,6 +106,7 @@ resource "aws_api_gateway_stage" "homework" {
   cache_cluster_enabled = true
   cache_cluster_size = 0.5
 }
+
 
 resource "aws_api_gateway_method_settings" "all" {
   rest_api_id = aws_api_gateway_rest_api.api.id
@@ -112,25 +118,25 @@ resource "aws_api_gateway_method_settings" "all" {
   }
 }
 
+#Lambda Permissions
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = var.homework_lambda_function_name
   principal     = "apigateway.amazonaws.com"
-
-  # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   source_arn = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
   depends_on = [aws_lambda_function.homework_lambda]
 
 }
 
-
+#Cloudwatch Group
 resource "aws_cloudwatch_log_group" "homework" {
   name              = "/aws/lambda/${var.homework_lambda_function_name}"
   retention_in_days = 14
 }
 
 
+#Lambda Policies
 resource "aws_iam_policy" "lambda_logging" {
   name        = "lambda_logging"
   path        = "/"
@@ -154,13 +160,13 @@ resource "aws_iam_policy" "lambda_logging" {
 EOF
 }
 
+
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = aws_iam_policy.lambda_logging.arn
 }
 
 
-# See also the following AWS managed policy: AWSLambdaBasicExecutionRole
 resource "aws_iam_policy" "lambda_s3" {
   name        = "lambda_s3"
   path        = "/"
@@ -179,6 +185,7 @@ resource "aws_iam_policy" "lambda_s3" {
 }
 EOF
 }
+
 
 resource "aws_iam_role_policy_attachment" "lambda_s3" {
   role       = aws_iam_role.iam_for_lambda.name
