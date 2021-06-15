@@ -21,11 +21,11 @@ export AWS_SECRET_ACCESS_KEY="xxxxxxx"\
 export AWS_DEFAULT_REGION="us-east-1"
 
 ## Deploy
-Clone this repository and run the following in the root of the directory
+Clone this repository and run the following in the root of the directory\
 terraforms init
 
-Continue by running a plan
-terraforms init
+Continue by running a plan\
+terraforms plan
 
 Finally you can deploy by running apply
 terraforms apply
